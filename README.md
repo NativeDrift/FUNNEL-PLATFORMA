@@ -5,7 +5,16 @@ funnel engine (no hardcoded screens), version pinning with rollback, an A/B expe
 ingestion API, and an analytics dashboard built on unique sessions rather than raw event counts.
 
 Built for the "Funnel Runtime" fullstack take-home, driven by the `workstyle-planner` funnel config
-supplied with the assignment. Live URL: _TODO — fill in after deploy_. Repo: _TODO_.
+supplied with the assignment.
+
+- **Live app:** https://web-production-a5dde.up.railway.app
+- **Live API:** https://server-production-55d28.up.railway.app
+- **Repo:** https://github.com/NativeDrift/FUNNEL-PLATFORMA
+
+Deployed on Railway as two services from this repo: `server` (Fastify API) and `web` (Vite-built
+React app served via `vite preview`), each built with Railway's Railpack builder using
+`RAILPACK_INSTALL_CMD` / `RAILPACK_BUILD_CMD` / `RAILPACK_START_CMD` overrides to target the right
+npm workspace. `VITE_API_URL` on the `web` service points at the `server` service's public domain.
 
 ## Stack
 
@@ -257,6 +266,10 @@ exercise the ingestion invariants above.
   horizontally as-is.
 - No visual config editor, as explicitly out of scope — versions are published by pasting JSON on
   `/admin`.
+- The Railway deploy of `server` has no attached volume, so the SQLite file lives on the container's
+  ephemeral disk and resets on redeploy/restart — fine for reviewing this take-home, not for
+  production. Run `npm run seed:traffic` (with `API_URL` pointed at the live API) again after any
+  redeploy if the dashboard needs to show data.
 
 ## Agent process
 
