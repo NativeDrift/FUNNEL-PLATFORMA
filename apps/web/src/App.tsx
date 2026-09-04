@@ -13,7 +13,7 @@ export function App() {
       </nav>
       <Routes>
         <Route path="/" element={<FunnelPage />} />
-        <Route path="/f/:funnelKey" element={<FunnelPage />} />
+        <Route path="/f/:funnelId" element={<FunnelPage />} />
         <Route path="/admin" element={<AdminPage />} />
         <Route path="/analytics" element={<AnalyticsPage />} />
       </Routes>

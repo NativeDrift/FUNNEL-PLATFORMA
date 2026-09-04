@@ -1,18 +1,18 @@
-import type { Step, Answers, TrackedEvent } from "@funnel/shared";
+import type { Answers, ResolvedResult, StepDef, TrackedEvent } from "@funnel/shared";
 
 const API_URL = import.meta.env.VITE_API_URL ?? "http://localhost:4000";
 
 export interface SessionView {
   sessionId: string;
-  funnelKey: string;
+  funnelId: string;
   version: number;
   variant: "A" | "B";
-  entryStepId: string;
-  steps: Step[];
   currentStepId: string;
-  currentStep: Step | undefined;
+  currentStep: StepDef | undefined;
+  result: ResolvedResult | undefined;
   answers: Answers;
-  progress: { visited: number; likelyTotal: number };
+  progress: { visited: number; total: number };
+  position: { index: number; count: number };
 }
 
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
@@ -28,14 +28,14 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
 }
 
 export function startSession(params: {
-  funnelKey: string;
+  funnelId: string;
   variant?: "A" | "B";
   utm?: Record<string, string>;
 }): Promise<SessionView> {
   const qs = params.variant ? `?variant=${params.variant}` : "";
   return request(`/api/sessions${qs}`, {
     method: "POST",
-    body: JSON.stringify({ funnelKey: params.funnelKey, utm: params.utm }),
+    body: JSON.stringify({ funnelId: params.funnelId, utm: params.utm }),
   });
 }
 
@@ -70,27 +70,27 @@ export interface VersionSummary {
   config: unknown;
 }
 
-export function listVersions(funnelKey: string): Promise<VersionSummary[]> {
-  return request(`/api/admin/funnels/${funnelKey}/versions`);
+export function listVersions(funnelId: string): Promise<VersionSummary[]> {
+  return request(`/api/admin/funnels/${funnelId}/versions`);
 }
 
-export function getActiveVersion(funnelKey: string): Promise<VersionSummary> {
-  return request(`/api/admin/funnels/${funnelKey}/active`);
+export function getActiveVersion(funnelId: string): Promise<VersionSummary> {
+  return request(`/api/admin/funnels/${funnelId}/active`);
 }
 
-export function publishVersion(funnelKey: string, config: unknown): Promise<VersionSummary> {
-  return request(`/api/admin/funnels/${funnelKey}/versions`, {
+export function publishVersion(funnelId: string, config: unknown): Promise<VersionSummary> {
+  return request(`/api/admin/funnels/${funnelId}/versions`, {
     method: "POST",
     body: JSON.stringify({ config }),
   });
 }
 
-export function activateVersion(funnelKey: string, version: number): Promise<VersionSummary> {
-  return request(`/api/admin/funnels/${funnelKey}/versions/${version}/activate`, { method: "POST" });
+export function activateVersion(funnelId: string, version: number): Promise<VersionSummary> {
+  return request(`/api/admin/funnels/${funnelId}/versions/${version}/activate`, { method: "POST" });
 }
 
 export interface AnalyticsResponse {
-  funnelKey: string;
+  funnelId: string;
   sessionsStarted: number;
   resultReached: number;
   ctaClicks: number;
@@ -101,12 +101,12 @@ export interface AnalyticsResponse {
 }
 
 export function getAnalytics(params: {
-  funnelKey: string;
+  funnelId: string;
   version?: number;
   variant?: "A" | "B";
   utmCampaign?: string;
 }): Promise<AnalyticsResponse> {
-  const query = new URLSearchParams({ funnelKey: params.funnelKey });
+  const query = new URLSearchParams({ funnelId: params.funnelId });
   if (params.version !== undefined) query.set("version", String(params.version));
   if (params.variant) query.set("variant", params.variant);
   if (params.utmCampaign) query.set("utmCampaign", params.utmCampaign);

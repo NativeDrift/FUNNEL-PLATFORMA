@@ -98,6 +98,41 @@ body {
   color: var(--muted);
 }
 
+.eyebrow {
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--primary);
+  margin-bottom: 0.4rem;
+}
+
+.number-field {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  margin: 1rem 0;
+}
+
+.number-field .number-input {
+  margin: 0;
+  flex: 1;
+}
+
+.number-unit {
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+
+.recommendations {
+  padding-left: 1.2rem;
+  margin: 1rem 0;
+}
+
+.recommendations li {
+  margin-bottom: 0.4rem;
+}
+
 .options {
   display: flex;
   flex-direction: column;

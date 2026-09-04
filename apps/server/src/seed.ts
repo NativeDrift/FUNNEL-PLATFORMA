@@ -4,7 +4,7 @@ import type { FunnelConfig } from "@funnel/shared";
 import { getOrCreateFunnel, getActiveVersion, publishVersion, type FunnelVersionRow } from "./db/repo.js";
 
 export function seedFunnel(db: DatabaseSync, config: FunnelConfig): FunnelVersionRow {
-  const funnel = getOrCreateFunnel(db, config.key, config.name);
+  const funnel = getOrCreateFunnel(db, config.funnelId, config.title);
   const active = getActiveVersion(db, funnel.id);
   return active ?? publishVersion(db, funnel.id, config);
 }

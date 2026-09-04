@@ -1,45 +1,49 @@
 import {
-  computeLikelyPath,
-  resolveFunnelForVariant,
+  computeProgress,
+  getStepDef,
+  resolveResult,
+  resolveResultId,
+  resolveVisibleSequence,
   type Answers,
   type FunnelConfig,
-  type Step,
+  type ResolvedResult,
+  type StepDef,
 } from "@funnel/shared";
 import type { SessionRow } from "../db/repo.js";
 
 export interface SessionView {
   sessionId: string;
-  funnelKey: string;
+  funnelId: string;
   version: number;
   variant: string;
-  entryStepId: string;
-  steps: Step[];
   currentStepId: string;
-  currentStep: Step | undefined;
+  currentStep: StepDef | undefined;
+  result: ResolvedResult | undefined;
   answers: Answers;
-  progress: { visited: number; likelyTotal: number };
+  progress: { visited: number; total: number };
+  position: { index: number; count: number };
 }
 
-export function buildSessionView(
-  session: SessionRow,
-  funnelKey: string,
-  config: FunnelConfig
-): SessionView {
-  const resolved = resolveFunnelForVariant(config, session.variant);
+export function buildSessionView(session: SessionRow, funnelId: string, config: FunnelConfig): SessionView {
   const answers = JSON.parse(session.answers_json) as Answers;
-  const visitedSteps = JSON.parse(session.visited_steps_json) as string[];
-  const likelyPath = computeLikelyPath(resolved, answers);
+  const currentStep = getStepDef(config, session.variant, session.current_step_id);
+  const result =
+    currentStep?.type === "result"
+      ? resolveResult(config, session.variant, resolveResultId(config, answers))
+      : undefined;
+
+  const visibleSequence = resolveVisibleSequence(config, session.variant, answers);
 
   return {
     sessionId: session.id,
-    funnelKey,
+    funnelId,
     version: session.version,
     variant: session.variant,
-    entryStepId: resolved.entryStepId,
-    steps: [...resolved.steps.values()],
     currentStepId: session.current_step_id,
-    currentStep: resolved.steps.get(session.current_step_id),
+    currentStep,
+    result,
     answers,
-    progress: { visited: visitedSteps.length, likelyTotal: likelyPath.length },
+    progress: computeProgress(config, session.variant, answers),
+    position: { index: visibleSequence.indexOf(session.current_step_id), count: visibleSequence.length },
   };
 }

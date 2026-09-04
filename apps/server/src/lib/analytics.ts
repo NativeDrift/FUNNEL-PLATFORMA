@@ -1,5 +1,5 @@
 import type { DatabaseSync } from "node:sqlite";
-import { computeLikelyPath, resolveFunnelForVariant, type FunnelConfig, type Variant } from "@funnel/shared";
+import type { FunnelConfig, Variant } from "@funnel/shared";
 import { getVersionByNumber, getActiveVersion, type FunnelRow } from "../db/repo.js";
 
 export interface AnalyticsFilters {
@@ -90,7 +90,7 @@ export interface VersionSummary {
 }
 
 export interface AnalyticsResult {
-  funnelKey: string;
+  funnelId: string;
   filters: AnalyticsFilters;
   sessionsStarted: number;
   resultReached: number;
@@ -111,11 +111,14 @@ function resolveCanonicalStepOrder(
     getActiveVersion(db, funnelId);
   if (!versionRow) return [];
 
+  // The full per-variant stepSequence, not resolveVisibleSequence(...,{}) — some steps only
+  // become visible after an earlier answer (visibleWhen), so filtering with no answers at all
+  // would drop them from the table entirely. Showing the full possible sequence and letting a
+  // conditional step's viewedSessions come out lower is the more honest picture.
   const config = JSON.parse(versionRow.config_json) as FunnelConfig;
   const variant: Variant = filters.variant ?? "A";
-  const resolved = resolveFunnelForVariant(config, variant);
-  const path = computeLikelyPath(resolved, {});
-  return path.filter((id) => resolved.steps.get(id)?.type !== "result");
+  const sequence = config.experiment.variants[variant].stepSequence;
+  return sequence.filter((id) => config.steps[id]?.type !== "result");
 }
 
 function summarize(
@@ -164,7 +167,7 @@ export function getAnalytics(db: DatabaseSync, funnel: FunnelRow, filters: Analy
   }));
 
   return {
-    funnelKey: funnel.key,
+    funnelId: funnel.key,
     filters,
     ...overall,
     steps,

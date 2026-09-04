@@ -8,10 +8,10 @@
  *
  * Usage: npm run seed:traffic   (server must already be running)
  */
-import type { Step } from "@funnel/shared";
+import { deriveAnswerKind, type StepDef } from "@funnel/shared";
 
 const API_URL = process.env.API_URL ?? "http://localhost:4000";
-const FUNNEL_KEY = process.env.FUNNEL_KEY ?? "fitness-onboarding";
+const FUNNEL_ID = process.env.FUNNEL_ID ?? "workstyle-planner";
 const SESSION_COUNT = Number(process.env.SESSION_COUNT ?? 130);
 const CONCURRENCY = 8;
 
@@ -24,12 +24,19 @@ interface TrackedEvent {
   properties?: Record<string, unknown>;
 }
 
+interface ResolvedResult {
+  id: string;
+  cta: { label: string; action: string };
+}
+
 interface SessionView {
   sessionId: string;
   version: number;
   variant: "A" | "B";
   currentStepId: string;
-  currentStep: Step;
+  currentStep: StepDef;
+  result?: ResolvedResult;
+  position: { index: number; count: number };
 }
 
 const UTM_SOURCES = ["google", "facebook", "instagram", "newsletter", "direct"];
@@ -57,27 +64,23 @@ function makeEvent(sessionId: string, type: string, stepId?: string, properties?
   return { event_id: crypto.randomUUID(), session_id: sessionId, type, client_ts: Date.now(), step_id: stepId, properties };
 }
 
-function answerFor(step: Step): string | string[] | number {
+function answerFor(step: StepDef): string | string[] | number {
   switch (step.type) {
     case "single-select":
-      return pick(step.options).value;
+      return pick(step.input.options).value;
     case "multi-select": {
-      const count = randomInt(1, Math.min(step.options.length, step.maxSelected ?? step.options.length));
-      const shuffled = [...step.options].sort(() => Math.random() - 0.5);
+      const max = step.validation?.maxSelections ?? step.input.options.length;
+      const count = randomInt(1, Math.min(step.input.options.length, max));
+      const shuffled = [...step.input.options].sort(() => Math.random() - 0.5);
       return shuffled.slice(0, count).map((o) => o.value);
     }
     case "number":
-      return randomInt(step.min ?? 0, step.max ?? 100);
+      return randomInt(step.input.min, step.input.max);
     case "info":
       return "seen";
     default:
       return "seen";
   }
-}
-
-interface RunResult {
-  events: TrackedEvent[];
-  reachedResult: boolean;
 }
 
 async function runSession(index: number): Promise<void> {
@@ -91,45 +94,66 @@ async function runSession(index: number): Promise<void> {
 
   let session = await api<SessionView>(`/api/sessions${qs}`, {
     method: "POST",
-    body: JSON.stringify({ funnelKey: FUNNEL_KEY, utm }),
+    body: JSON.stringify({ funnelId: FUNNEL_ID, utm }),
   });
 
   const events: TrackedEvent[] = [makeEvent(session.sessionId, "session_started", session.currentStepId)];
 
   const dropAtStep = Math.random() < 0.3 ? randomInt(1, 4) : Infinity;
   let stepsTaken = 0;
-  let reachedResult = false;
 
   while (stepsTaken < 20) {
-    events.push(makeEvent(session.sessionId, "step_viewed", session.currentStepId));
-
-    if (session.currentStep.type === "result") {
-      events.push(makeEvent(session.sessionId, "result_viewed", session.currentStepId));
-      reachedResult = true;
+    if (session.currentStep.type === "result" && session.result) {
+      events.push(
+        makeEvent(session.sessionId, "result_viewed", session.currentStepId, { result_id: session.result.id })
+      );
       if (Math.random() < 0.65) {
-        events.push(makeEvent(session.sessionId, "cta_clicked", session.currentStepId));
+        events.push(
+          makeEvent(session.sessionId, "cta_clicked", session.currentStepId, {
+            result_id: session.result.id,
+            action: session.result.cta.action,
+          })
+        );
       }
       break;
     }
+
+    events.push(
+      makeEvent(session.sessionId, "step_viewed", session.currentStepId, {
+        step_type: session.currentStep.type,
+        visible_step_index: session.position.index,
+        visible_step_count: session.position.count,
+      })
+    );
 
     stepsTaken += 1;
     if (stepsTaken >= dropAtStep) break; // simulated drop-off: user just leaves
 
     // occasionally go back a step first, then forward again
     if (Math.random() < 0.1 && stepsTaken > 1) {
-      events.push(makeEvent(session.sessionId, "back_clicked", session.currentStepId));
       session = await api<SessionView>(`/api/sessions/${session.sessionId}/back`, { method: "POST" });
-      events.push(makeEvent(session.sessionId, "step_viewed", session.currentStepId));
+      events.push(
+        makeEvent(session.sessionId, "back_clicked", session.currentStepId, {
+          destination_step_id: session.currentStepId,
+        })
+      );
     }
 
     const value = answerFor(session.currentStep);
-    events.push(makeEvent(session.sessionId, "answer_submitted", session.currentStepId, { value }));
+    events.push(
+      makeEvent(session.sessionId, "answer_submitted", session.currentStepId, {
+        answer_kind: deriveAnswerKind(session.currentStep, value),
+      })
+    );
 
+    const prevStepId = session.currentStepId;
     session = await api<SessionView>(`/api/sessions/${session.sessionId}/answers`, {
       method: "POST",
-      body: JSON.stringify({ stepId: session.currentStepId, value }),
+      body: JSON.stringify({ stepId: prevStepId, value }),
     });
-    events.push(makeEvent(session.sessionId, "step_completed", events[events.length - 1].step_id));
+    events.push(
+      makeEvent(session.sessionId, "step_completed", prevStepId, { next_step_id: session.currentStepId })
+    );
   }
 
   await deliverEvents(index, events);
@@ -181,7 +205,7 @@ async function runWithConcurrency(count: number, concurrency: number, task: (i: 
 }
 
 async function main() {
-  console.log(`Generating ${SESSION_COUNT} synthetic sessions against ${API_URL} (funnel: ${FUNNEL_KEY})...`);
+  console.log(`Generating ${SESSION_COUNT} synthetic sessions against ${API_URL} (funnel: ${FUNNEL_ID})...`);
   const failures = await runWithConcurrency(SESSION_COUNT, CONCURRENCY, runSession);
   console.log(`Done. ${SESSION_COUNT - failures}/${SESSION_COUNT} sessions completed successfully.`);
   if (failures > 0) process.exitCode = 1;

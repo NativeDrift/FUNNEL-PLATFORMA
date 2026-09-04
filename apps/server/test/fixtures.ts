@@ -1,58 +1,84 @@
 import type { FunnelConfig } from "@funnel/shared";
 
 export const testFunnelConfig: FunnelConfig = {
-  key: "test-funnel",
-  name: "Test Funnel",
-  entryStepId: "s1",
-  steps: [
-    {
+  funnelId: "test-funnel",
+  title: "Test Funnel",
+  experiment: {
+    id: "test-experiment",
+    assignment: "server",
+    variants: {
+      A: {
+        weight: 50,
+        stepSequence: ["s1", "s2a", "s2b", "s3", "s4", "s5"],
+      },
+      B: {
+        weight: 50,
+        stepSequence: ["s1", "s3", "s4", "s5"],
+        resultOverrides: {
+          r_done: { title: "Done (B)" },
+        },
+      },
+    },
+  },
+  steps: {
+    s1: {
       id: "s1",
       type: "single-select",
-      title: "Pick a track",
-      options: [
-        { id: "fast", label: "Fast", value: "fast" },
-        { id: "slow", label: "Slow", value: "slow" },
-      ],
-      next: {
-        rules: [{ if: { field: "s1", op: "eq", value: "fast" }, next: "s2b" }],
-        default: "s2a",
+      content: { title: "Pick a track" },
+      input: {
+        name: "s1",
+        options: [
+          { value: "fast", label: "Fast" },
+          { value: "slow", label: "Slow" },
+        ],
       },
     },
-    { id: "s2a", type: "info", title: "Slow track info", body: "...", next: "s3" },
-    { id: "s2b", type: "info", title: "Fast track info", body: "...", next: "s3" },
-    {
+    s2a: {
+      id: "s2a",
+      type: "info",
+      content: { title: "Slow track info", body: "..." },
+      visibleWhen: { answer: "s1", operator: "eq", value: "slow" },
+    },
+    s2b: {
+      id: "s2b",
+      type: "info",
+      content: { title: "Fast track info", body: "..." },
+      visibleWhen: { answer: "s1", operator: "eq", value: "fast" },
+    },
+    s3: {
       id: "s3",
       type: "number",
-      title: "How many?",
-      min: 0,
-      max: 10,
-      next: "s4",
+      content: { title: "How many?" },
+      input: { name: "s3", min: 0, max: 10 },
     },
-    {
+    s4: {
       id: "s4",
       type: "multi-select",
-      title: "Pick options",
-      options: [
-        { id: "a", label: "A", value: "a" },
-        { id: "b", label: "B", value: "b" },
-      ],
-      minSelected: 1,
-      next: "s5",
+      content: { title: "Pick options" },
+      input: {
+        name: "s4",
+        options: [
+          { value: "a", label: "A" },
+          { value: "b", label: "B" },
+        ],
+      },
+      validation: { minSelections: 1 },
     },
-    {
+    s5: {
       id: "s5",
       type: "result",
-      title: "Done",
-      body: "Result",
-      ctaLabel: "Go",
+      content: { title: "Done" },
+      resultSource: "resultRules",
     },
-  ],
-  variants: {
-    B: {
-      removeSteps: ["s2a", "s2b"],
-      stepOverrides: {
-        s5: { title: "Done (B)" },
-      },
+  },
+  resultRules: [{ resultId: "r_done", when: { answer: "s1", operator: "eq", value: "fast" } }],
+  defaultResultId: "r_done",
+  results: {
+    r_done: {
+      id: "r_done",
+      title: "Done",
+      summary: "Result",
+      cta: { label: "Go", action: "go" },
     },
   },
 };

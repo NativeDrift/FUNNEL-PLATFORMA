@@ -11,8 +11,8 @@ describe("session version pinning", () => {
 
     const publishRes = await app.inject({
       method: "POST",
-      url: `/api/admin/funnels/${testFunnelConfig.key}/versions`,
-      payload: { config: { ...testFunnelConfig, name: "Test Funnel v2" } },
+      url: `/api/admin/funnels/${testFunnelConfig.funnelId}/versions`,
+      payload: { config: { ...testFunnelConfig, title: "Test Funnel v2" } },
     });
     expect(publishRes.statusCode).toBe(201);
     expect(publishRes.json().version).toBe(2);

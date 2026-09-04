@@ -11,12 +11,12 @@ export function makeTestApp(config: FunnelConfig = testFunnelConfig): FastifyIns
   return buildApp(db);
 }
 
-export async function createSession(app: FastifyInstance, opts: { funnelKey?: string; variant?: "A" | "B" } = {}) {
+export async function createSession(app: FastifyInstance, opts: { funnelId?: string; variant?: "A" | "B" } = {}) {
   const query = opts.variant ? `?variant=${opts.variant}` : "";
   const res = await app.inject({
     method: "POST",
     url: `/api/sessions${query}`,
-    payload: { funnelKey: opts.funnelKey ?? testFunnelConfig.key },
+    payload: { funnelId: opts.funnelId ?? testFunnelConfig.funnelId },
   });
   return res.json();
 }

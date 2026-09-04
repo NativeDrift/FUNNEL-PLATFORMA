@@ -12,7 +12,7 @@ const PORT = Number(process.env.PORT ?? 4000);
 const HOST = process.env.HOST ?? "0.0.0.0";
 
 const db = createDb(DB_PATH);
-seedFunnelFromFile(db, join(REPO_ROOT, "configs/fitness-onboarding.v1.json"));
+seedFunnelFromFile(db, join(REPO_ROOT, "configs/workstyle-planner.v1.json"));
 
 const app = buildApp(db);
 

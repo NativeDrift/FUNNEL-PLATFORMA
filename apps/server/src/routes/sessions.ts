@@ -1,7 +1,7 @@
 import type { FastifyInstance } from "fastify";
 import { randomUUID } from "node:crypto";
 import { z } from "zod";
-import { resolveFunnelForVariant, resolveNextStepId, validateAnswer, type Answers, type FunnelConfig } from "@funnel/shared";
+import { getEntryStepId, getNextStepId, validateAnswer, type Answers, type FunnelConfig } from "@funnel/shared";
 import {
   createSession,
   getActiveVersion,
@@ -25,7 +25,7 @@ const utmSchema = z
   .partial();
 
 const createSessionSchema = z.object({
-  funnelKey: z.string().min(1),
+  funnelId: z.string().min(1),
   variant: z.enum(["A", "B"]).optional(),
   utm: utmSchema.optional(),
 });
@@ -40,16 +40,18 @@ export async function sessionsRoutes(app: FastifyInstance) {
     const parsed = createSessionSchema.safeParse(req.body);
     if (!parsed.success) return reply.code(400).send({ error: parsed.error.flatten() });
 
-    const query = req.query as { variant?: string };
-    const funnel = getFunnelByKey(app.db, parsed.data.funnelKey);
+    const funnel = getFunnelByKey(app.db, parsed.data.funnelId);
     if (!funnel) return reply.code(404).send({ error: "funnel not found" });
 
     const activeVersion = getActiveVersion(app.db, funnel.id);
     if (!activeVersion) return reply.code(404).send({ error: "funnel has no active version" });
 
     const config = JSON.parse(activeVersion.config_json) as FunnelConfig;
-    const variant = assignVariant(query.variant ?? parsed.data.variant);
-    const resolved = resolveFunnelForVariant(config, variant);
+    const query = req.query as { variant?: string };
+    const overrideParamName = config.experiment.overrideQueryParam ?? "variant";
+    const override = (req.query as Record<string, string | undefined>)[overrideParamName] ?? query.variant ?? parsed.data.variant;
+    const variant = assignVariant(config.experiment.variants, override);
+    const entryStepId = getEntryStepId(config, variant);
 
     const session = createSession(app.db, {
       id: randomUUID(),
@@ -57,7 +59,7 @@ export async function sessionsRoutes(app: FastifyInstance) {
       funnelVersionId: activeVersion.id,
       version: activeVersion.version,
       variant,
-      entryStepId: resolved.entryStepId,
+      entryStepId,
       utm: parsed.data.utm ?? {},
     });
 
@@ -85,14 +87,13 @@ export async function sessionsRoutes(app: FastifyInstance) {
     const versionRow = getVersionById(app.db, session.funnel_version_id)!;
     const funnel = getFunnelById(app.db, session.funnel_id)!;
     const config = JSON.parse(versionRow.config_json) as FunnelConfig;
-    const resolved = resolveFunnelForVariant(config, session.variant);
 
     const { stepId, value } = parsed.data;
     if (stepId !== session.current_step_id) {
       return reply.code(409).send({ error: "stepId does not match the session's current step" });
     }
 
-    const step = resolved.steps.get(stepId);
+    const step = config.steps[stepId];
     if (!step) return reply.code(400).send({ error: "unknown step" });
     if (step.type === "result") return reply.code(400).send({ error: "result step has no answer" });
 
@@ -102,7 +103,7 @@ export async function sessionsRoutes(app: FastifyInstance) {
     const answers: Answers = { ...(JSON.parse(session.answers_json) as Answers) };
     if (value !== undefined) answers[stepId] = value;
 
-    const nextStepId = resolveNextStepId(step, answers);
+    const nextStepId = getNextStepId(config, session.variant, stepId, answers);
     if (!nextStepId) return reply.code(500).send({ error: "funnel config has no next step defined" });
 
     const visitedSteps = JSON.parse(session.visited_steps_json) as string[];

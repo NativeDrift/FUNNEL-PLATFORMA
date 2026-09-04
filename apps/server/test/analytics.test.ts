@@ -35,7 +35,7 @@ describe("analytics aggregation", () => {
       { event_id: "d2", session_id: dropped.sessionId, type: "step_viewed", client_ts: 2001, step_id: "s1" },
     ]);
 
-    const res = await app.inject({ method: "GET", url: "/api/analytics?funnelKey=test-funnel" });
+    const res = await app.inject({ method: "GET", url: "/api/analytics?funnelId=test-funnel" });
     const body = res.json();
 
     expect(body.sessionsStarted).toBe(2);
@@ -59,7 +59,7 @@ describe("analytics aggregation", () => {
       .inject({
         method: "POST",
         url: "/api/sessions",
-        payload: { funnelKey: "test-funnel", utm: { utm_campaign: "spring_sale" } },
+        payload: { funnelId: "test-funnel", utm: { utm_campaign: "spring_sale" } },
       })
       .then((r) => r.json());
     const withoutCampaign = await createSession(app);
@@ -71,7 +71,7 @@ describe("analytics aggregation", () => {
 
     const res = await app.inject({
       method: "GET",
-      url: "/api/analytics?funnelKey=test-funnel&utmCampaign=spring_sale",
+      url: "/api/analytics?funnelId=test-funnel&utmCampaign=spring_sale",
     });
     expect(res.json().sessionsStarted).toBe(1);
   });

@@ -1,10 +1,10 @@
 import { useEffect, useState } from "react";
 import { activateVersion, listVersions, publishVersion, type VersionSummary } from "../api/client";
 
-const DEFAULT_FUNNEL_KEY = "fitness-onboarding";
+const DEFAULT_FUNNEL_ID = "workstyle-planner";
 
 export function AdminPage() {
-  const [funnelKey, setFunnelKey] = useState(DEFAULT_FUNNEL_KEY);
+  const [funnelId, setFunnelId] = useState(DEFAULT_FUNNEL_ID);
   const [versions, setVersions] = useState<VersionSummary[]>([]);
   const [configText, setConfigText] = useState("");
   const [message, setMessage] = useState<string | null>(null);
@@ -13,7 +13,7 @@ export function AdminPage() {
   async function refresh() {
     setLoading(true);
     try {
-      setVersions(await listVersions(funnelKey));
+      setVersions(await listVersions(funnelId));
     } catch (err) {
       setMessage((err as Error).message);
     } finally {
@@ -24,7 +24,7 @@ export function AdminPage() {
   useEffect(() => {
     void refresh();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [funnelKey]);
+  }, [funnelId]);
 
   async function handlePublish() {
     setMessage(null);
@@ -36,7 +36,7 @@ export function AdminPage() {
       return;
     }
     try {
-      const version = await publishVersion(funnelKey, config);
+      const version = await publishVersion(funnelId, config);
       setMessage(`Published version ${version.version} (now active)`);
       setConfigText("");
       await refresh();
@@ -48,7 +48,7 @@ export function AdminPage() {
   async function handleActivate(version: number) {
     setMessage(null);
     try {
-      await activateVersion(funnelKey, version);
+      await activateVersion(funnelId, version);
       setMessage(`Version ${version} is now active`);
       await refresh();
     } catch (err) {
@@ -61,8 +61,8 @@ export function AdminPage() {
       <h1>Funnel admin</h1>
 
       <label>
-        Funnel key
-        <input value={funnelKey} onChange={(e) => setFunnelKey(e.target.value)} />
+        Funnel ID
+        <input value={funnelId} onChange={(e) => setFunnelId(e.target.value)} />
       </label>
 
       <h2>Versions</h2>
@@ -98,7 +98,7 @@ export function AdminPage() {
         rows={16}
         value={configText}
         onChange={(e) => setConfigText(e.target.value)}
-        placeholder='{ "key": "...", "name": "...", "entryStepId": "...", "steps": [...] }'
+        placeholder='{ "funnelId": "...", "title": "...", "experiment": {...}, "steps": {...}, "resultRules": [...], "defaultResultId": "...", "results": {...} }'
       />
       <button className="primary" onClick={handlePublish}>
         Publish

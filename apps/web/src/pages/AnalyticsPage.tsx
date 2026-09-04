@@ -1,14 +1,14 @@
 import { useEffect, useState } from "react";
 import { getAnalytics, type AnalyticsResponse } from "../api/client";
 
-const DEFAULT_FUNNEL_KEY = "fitness-onboarding";
+const DEFAULT_FUNNEL_ID = "workstyle-planner";
 
 function pct(n: number | null): string {
   return n === null ? "—" : `${(n * 100).toFixed(1)}%`;
 }
 
 export function AnalyticsPage() {
-  const [funnelKey, setFunnelKey] = useState(DEFAULT_FUNNEL_KEY);
+  const [funnelId, setFunnelId] = useState(DEFAULT_FUNNEL_ID);
   const [utmCampaign, setUtmCampaign] = useState("");
   const [version, setVersion] = useState("");
   const [variant, setVariant] = useState("");
@@ -19,7 +19,7 @@ export function AnalyticsPage() {
     setError(null);
     try {
       const result = await getAnalytics({
-        funnelKey,
+        funnelId,
         version: version ? Number(version) : undefined,
         variant: variant === "A" || variant === "B" ? variant : undefined,
         utmCampaign: utmCampaign || undefined,
@@ -41,8 +41,8 @@ export function AnalyticsPage() {
 
       <div className="filters">
         <label>
-          Funnel key
-          <input value={funnelKey} onChange={(e) => setFunnelKey(e.target.value)} />
+          Funnel ID
+          <input value={funnelId} onChange={(e) => setFunnelId(e.target.value)} />
         </label>
         <label>
           Version

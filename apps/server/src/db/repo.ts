@@ -204,6 +204,7 @@ export function insertEventsBatch(db: DatabaseSync, events: TrackedEvent[]): Eve
        utm_campaign, client_ts, properties_json)
      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
   );
+  const experimentIdByVersion = new Map<number, string | undefined>();
 
   for (const evt of events) {
     try {
@@ -212,6 +213,22 @@ export function insertEventsBatch(db: DatabaseSync, events: TrackedEvent[]): Eve
         result.failed.push({ event_id: evt.event_id, error: "unknown session_id" });
         continue;
       }
+
+      if (!experimentIdByVersion.has(session.funnel_version_id)) {
+        const versionRow = getVersionById(db, session.funnel_version_id);
+        const config = versionRow ? (JSON.parse(versionRow.config_json) as FunnelConfig) : undefined;
+        experimentIdByVersion.set(session.funnel_version_id, config?.experiment.id);
+      }
+
+      // baseProperties (funnel_id/version/variant/step_id/utm_campaign/client_ts are already
+      // dedicated columns) plus whatever event-specific properties the client attached.
+      const enrichedProperties = {
+        experiment_id: experimentIdByVersion.get(session.funnel_version_id),
+        utm_source: session.utm_source,
+        utm_medium: session.utm_medium,
+        ...evt.properties,
+      };
+
       const r = insert.run(
         evt.event_id,
         evt.session_id,
@@ -223,7 +240,7 @@ export function insertEventsBatch(db: DatabaseSync, events: TrackedEvent[]): Eve
         evt.step_id ?? null,
         session.utm_campaign,
         evt.client_ts,
-        evt.properties ? JSON.stringify(evt.properties) : null
+        JSON.stringify(enrichedProperties)
       );
       if (r.changes > 0) {
         result.accepted.push(evt.event_id);
