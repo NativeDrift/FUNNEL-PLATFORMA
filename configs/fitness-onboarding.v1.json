@@ -1,0 +1,116 @@
+{
+  "key": "fitness-onboarding",
+  "name": "Fitness Onboarding v1",
+  "entryStepId": "s_goal",
+  "steps": [
+    {
+      "id": "s_goal",
+      "type": "single-select",
+      "title": "What's your main goal?",
+      "options": [
+        { "id": "lose_weight", "label": "Lose weight", "value": "lose_weight" },
+        { "id": "gain_muscle", "label": "Gain muscle", "value": "gain_muscle" },
+        { "id": "maintain", "label": "Stay fit / maintain", "value": "maintain" }
+      ],
+      "next": {
+        "rules": [
+          { "if": { "field": "s_goal", "op": "eq", "value": "gain_muscle" }, "next": "s_muscle_experience" }
+        ],
+        "default": "s_activity_level"
+      }
+    },
+    {
+      "id": "s_activity_level",
+      "type": "single-select",
+      "title": "How active are you currently?",
+      "options": [
+        { "id": "sedentary", "label": "Mostly sedentary", "value": "sedentary" },
+        { "id": "light", "label": "Lightly active", "value": "light" },
+        { "id": "active", "label": "Very active", "value": "active" }
+      ],
+      "next": "s_age"
+    },
+    {
+      "id": "s_muscle_experience",
+      "type": "single-select",
+      "title": "What's your training experience?",
+      "options": [
+        { "id": "beginner", "label": "Beginner", "value": "beginner" },
+        { "id": "intermediate", "label": "Intermediate", "value": "intermediate" },
+        { "id": "advanced", "label": "Advanced", "value": "advanced" }
+      ],
+      "next": "s_age"
+    },
+    {
+      "id": "s_age",
+      "type": "number",
+      "title": "How old are you?",
+      "placeholder": "Age in years",
+      "min": 16,
+      "max": 90,
+      "next": {
+        "rules": [
+          { "if": { "field": "s_age", "op": "gte", "value": 50 }, "next": "s_health_info" }
+        ],
+        "default": "s_weight"
+      }
+    },
+    {
+      "id": "s_health_info",
+      "type": "info",
+      "title": "A quick note",
+      "body": "Since you're 50+, we recommend checking with your doctor before starting a new training program.",
+      "ctaLabel": "Got it",
+      "next": "s_weight"
+    },
+    {
+      "id": "s_weight",
+      "type": "number",
+      "title": "What's your current weight (kg)?",
+      "placeholder": "Weight in kg",
+      "min": 30,
+      "max": 300,
+      "next": "s_diet_preferences"
+    },
+    {
+      "id": "s_diet_preferences",
+      "type": "multi-select",
+      "title": "Any dietary preferences?",
+      "options": [
+        { "id": "vegetarian", "label": "Vegetarian", "value": "vegetarian" },
+        { "id": "vegan", "label": "Vegan", "value": "vegan" },
+        { "id": "keto", "label": "Keto", "value": "keto" },
+        { "id": "none", "label": "No preference", "value": "none" }
+      ],
+      "minSelected": 1,
+      "next": "s_plan_preview"
+    },
+    {
+      "id": "s_plan_preview",
+      "type": "info",
+      "title": "Building your plan",
+      "body": "We're putting together a plan tailored to your goal, activity level and preferences.",
+      "ctaLabel": "Continue",
+      "next": "s_result"
+    },
+    {
+      "id": "s_result",
+      "type": "result",
+      "title": "Your plan is ready",
+      "body": "Based on your answers we've prepared a personalized fitness plan.",
+      "ctaLabel": "Get my plan"
+    }
+  ],
+  "variants": {
+    "B": {
+      "removeSteps": ["s_plan_preview"],
+      "stepOverrides": {
+        "s_result": {
+          "title": "Your plan is waiting",
+          "body": "No more questions — grab your personalized plan now.",
+          "ctaLabel": "Show me the plan"
+        }
+      }
+    }
+  }
+}
