@@ -1,5 +1,6 @@
 import type { TrackedEvent } from "@funnel/shared";
 import { sendEvents } from "../api/client";
+import { generateId } from "./uuid";
 
 const STORAGE_KEY = "funnel_event_queue";
 const FLUSH_INTERVAL_MS = 1500;
@@ -26,7 +27,7 @@ class EventQueue {
   private flushing = false;
 
   track(event: Omit<TrackedEvent, "event_id" | "client_ts">): void {
-    const full: TrackedEvent = { ...event, event_id: crypto.randomUUID(), client_ts: Date.now() };
+    const full: TrackedEvent = { ...event, event_id: generateId(), client_ts: Date.now() };
     this.pending.push(full);
     savePending(this.pending);
   }

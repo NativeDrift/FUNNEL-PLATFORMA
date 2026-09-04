@@ -237,9 +237,14 @@ td {
 }
 
 .stat-row {
-  display: flex;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(110px, 1fr));
   gap: 1rem;
   margin: 1.5rem 0;
+}
+
+.table-scroll {
+  overflow-x: auto;
 }
 
 .stat {
@@ -285,4 +290,21 @@ td {
   justify-content: center;
   height: 60vh;
   font-size: 1.1rem;
+}
+
+@media (max-width: 480px) {
+  .step {
+    padding: 1.25rem;
+  }
+
+  .top-nav {
+    gap: 1rem;
+    padding: 0.75rem 1rem;
+  }
+
+  .funnel-page,
+  .admin-page,
+  .analytics-page {
+    margin: 1rem auto;
+  }
 }

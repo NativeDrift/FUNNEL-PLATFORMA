@@ -89,74 +89,80 @@ export function AnalyticsPage() {
           </div>
 
           <h2>Step funnel</h2>
-          <table>
-            <thead>
-              <tr>
-                <th>Step</th>
-                <th>Viewed (unique sessions)</th>
-                <th>Completed</th>
-                <th>Drop-off</th>
-              </tr>
-            </thead>
-            <tbody>
-              {data.steps.map((s) => (
-                <tr key={s.stepId}>
-                  <td>{s.stepId}</td>
-                  <td>{s.viewedSessions}</td>
-                  <td>{s.completedSessions}</td>
-                  <td>{s.dropOff}</td>
+          <div className="table-scroll">
+            <table>
+              <thead>
+                <tr>
+                  <th>Step</th>
+                  <th>Viewed (unique sessions)</th>
+                  <th>Completed</th>
+                  <th>Drop-off</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {data.steps.map((s) => (
+                  <tr key={s.stepId}>
+                    <td>{s.stepId}</td>
+                    <td>{s.viewedSessions}</td>
+                    <td>{s.completedSessions}</td>
+                    <td>{s.dropOff}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
 
           <h2>A vs B</h2>
-          <table>
-            <thead>
-              <tr>
-                <th>Variant</th>
-                <th>Sessions</th>
-                <th>Reached result</th>
-                <th>CTA clicks</th>
-                <th>CTA CTR</th>
-              </tr>
-            </thead>
-            <tbody>
-              {data.byVariant.map((v) => (
-                <tr key={v.variant}>
-                  <td>{v.variant}</td>
-                  <td>{v.sessionsStarted}</td>
-                  <td>{v.resultReached}</td>
-                  <td>{v.ctaClicks}</td>
-                  <td>{pct(v.ctaCTR)}</td>
+          <div className="table-scroll">
+            <table>
+              <thead>
+                <tr>
+                  <th>Variant</th>
+                  <th>Sessions</th>
+                  <th>Reached result</th>
+                  <th>CTA clicks</th>
+                  <th>CTA CTR</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {data.byVariant.map((v) => (
+                  <tr key={v.variant}>
+                    <td>{v.variant}</td>
+                    <td>{v.sessionsStarted}</td>
+                    <td>{v.resultReached}</td>
+                    <td>{v.ctaClicks}</td>
+                    <td>{pct(v.ctaCTR)}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
 
           <h2>By version</h2>
-          <table>
-            <thead>
-              <tr>
-                <th>Version</th>
-                <th>Sessions</th>
-                <th>Reached result</th>
-                <th>CTA clicks</th>
-                <th>CTA CTR</th>
-              </tr>
-            </thead>
-            <tbody>
-              {data.byVersion.map((v) => (
-                <tr key={v.version}>
-                  <td>{v.version}</td>
-                  <td>{v.sessionsStarted}</td>
-                  <td>{v.resultReached}</td>
-                  <td>{v.ctaClicks}</td>
-                  <td>{pct(v.ctaCTR)}</td>
+          <div className="table-scroll">
+            <table>
+              <thead>
+                <tr>
+                  <th>Version</th>
+                  <th>Sessions</th>
+                  <th>Reached result</th>
+                  <th>CTA clicks</th>
+                  <th>CTA CTR</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {data.byVersion.map((v) => (
+                  <tr key={v.version}>
+                    <td>{v.version}</td>
+                    <td>{v.sessionsStarted}</td>
+                    <td>{v.resultReached}</td>
+                    <td>{v.ctaClicks}</td>
+                    <td>{pct(v.ctaCTR)}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         </>
       )}
     </div>

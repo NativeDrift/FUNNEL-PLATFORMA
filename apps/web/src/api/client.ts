@@ -1,6 +1,8 @@
 import type { Answers, ResolvedResult, StepDef, TrackedEvent } from "@funnel/shared";
 
-const API_URL = import.meta.env.VITE_API_URL ?? "http://localhost:4000";
+// Falls back to whatever host the page itself was loaded from (with the API's port) rather than a
+// hardcoded "localhost", so this also works when opened from a phone via the dev machine's LAN IP.
+const API_URL = import.meta.env.VITE_API_URL ?? `${window.location.protocol}//${window.location.hostname}:4000`;
 
 export interface SessionView {
   sessionId: string;

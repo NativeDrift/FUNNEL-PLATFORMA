@@ -67,30 +67,32 @@ export function AdminPage() {
 
       <h2>Versions</h2>
       {loading && <p>Loading…</p>}
-      <table>
-        <thead>
-          <tr>
-            <th>Version</th>
-            <th>Status</th>
-            <th>Published at</th>
-            <th></th>
-          </tr>
-        </thead>
-        <tbody>
-          {versions.map((v) => (
-            <tr key={v.version}>
-              <td>{v.version}</td>
-              <td>{v.status}</td>
-              <td>{v.publishedAt ?? "—"}</td>
-              <td>
-                {v.status !== "active" && (
-                  <button onClick={() => handleActivate(v.version)}>Activate / rollback</button>
-                )}
-              </td>
+      <div className="table-scroll">
+        <table>
+          <thead>
+            <tr>
+              <th>Version</th>
+              <th>Status</th>
+              <th>Published at</th>
+              <th></th>
             </tr>
-          ))}
-        </tbody>
-      </table>
+          </thead>
+          <tbody>
+            {versions.map((v) => (
+              <tr key={v.version}>
+                <td>{v.version}</td>
+                <td>{v.status}</td>
+                <td>{v.publishedAt ?? "—"}</td>
+                <td>
+                  {v.status !== "active" && (
+                    <button onClick={() => handleActivate(v.version)}>Activate / rollback</button>
+                  )}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
 
       <h2>Publish new version</h2>
       <p className="subtitle">Paste a full funnel config JSON (see /configs in the repo for examples).</p>
