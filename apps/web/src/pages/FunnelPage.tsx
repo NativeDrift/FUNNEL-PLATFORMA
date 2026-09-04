@@ -150,7 +150,7 @@ export function FunnelPage() {
         <span className="variant-tag">variant {session.variant} · v{session.version}</span>
       </div>
       {session.currentStep.type === "result" && session.result ? (
-        <ResultView result={session.result} onCta={handleCta} submitting={submitting} />
+        <ResultView key={session.result.id} result={session.result} onCta={handleCta} submitting={submitting} />
       ) : (
         <StepRenderer step={session.currentStep} onSubmit={handleSubmit} submitting={submitting} error={error} />
       )}

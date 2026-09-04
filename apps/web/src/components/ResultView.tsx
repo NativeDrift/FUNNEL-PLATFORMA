@@ -1,3 +1,4 @@
+import { useState } from "react";
 import type { ResolvedResult } from "@funnel/shared";
 
 interface Props {
@@ -7,20 +8,34 @@ interface Props {
 }
 
 export function ResultView({ result, onCta, submitting }: Props) {
+  const [expanded, setExpanded] = useState(false);
+  const hasRecommendations = !!result.recommendations && result.recommendations.length > 0;
+
+  function handleClick() {
+    onCta();
+    if (hasRecommendations) setExpanded(true);
+  }
+
   return (
     <div className="step">
       <h2>{result.title}</h2>
       <p>{result.summary}</p>
-      {result.recommendations && result.recommendations.length > 0 && (
+
+      {expanded && hasRecommendations && (
         <ul className="recommendations">
-          {result.recommendations.map((r) => (
+          {result.recommendations!.map((r) => (
             <li key={r}>{r}</li>
           ))}
         </ul>
       )}
-      <button className="primary" disabled={submitting} onClick={onCta}>
-        {result.cta.label}
-      </button>
+
+      {!expanded || !hasRecommendations ? (
+        <button className="primary" disabled={submitting} onClick={handleClick}>
+          {result.cta.label}
+        </button>
+      ) : (
+        <p className="cta-done">✓ Added to your action list</p>
+      )}
     </div>
   );
 }

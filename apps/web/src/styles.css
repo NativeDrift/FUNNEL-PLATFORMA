@@ -133,6 +133,11 @@ body {
   margin-bottom: 0.4rem;
 }
 
+.cta-done {
+  color: #1a7a4c;
+  font-weight: 600;
+}
+
 .options {
   display: flex;
   flex-direction: column;
